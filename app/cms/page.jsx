@@ -18,9 +18,13 @@ import {
 } from "lucide-react";
 import {
   CMS_DRAFT_STORAGE_KEY,
+  CMS_SESSION_STORAGE_KEY,
   assetPath,
   cloneSiteContent,
+  fetchPublishedContent,
   siteContent,
+  savePublishedContent,
+  uploadCmsImage,
   updateFavicon,
 } from "../content/siteContent";
 
@@ -153,11 +157,15 @@ function convertImageToWebp(file) {
       image.onerror = () => reject(new Error("Could not convert image"));
       image.onload = () => {
         const canvas = document.createElement("canvas");
-        canvas.width = image.naturalWidth || image.width;
-        canvas.height = image.naturalHeight || image.height;
+        const naturalWidth = image.naturalWidth || image.width;
+        const naturalHeight = image.naturalHeight || image.height;
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
+        canvas.width = Math.max(1, Math.round(naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(naturalHeight * scale));
         const context = canvas.getContext("2d");
-        context.drawImage(image, 0, 0);
-        resolve(canvas.toDataURL("image/webp", 0.88));
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/webp", 0.82));
       };
 
       image.src = reader.result;
@@ -197,12 +205,14 @@ function ImageField({ label, value, onChange }) {
     if (!file) return;
 
     try {
-      setUploadStatus("Preparing image...");
+      setUploadStatus("Uploading image...");
       const webpImage = await convertImageToWebp(file);
-      onChange(webpImage);
-      setUploadStatus("Image ready");
-    } catch {
-      setUploadStatus("This image could not be used");
+      const token = window.sessionStorage.getItem(CMS_SESSION_STORAGE_KEY);
+      const uploadedUrl = await uploadCmsImage(webpImage, file.name, token);
+      onChange(uploadedUrl);
+      setUploadStatus("Image uploaded");
+    } catch (uploadError) {
+      setUploadStatus(uploadError instanceof Error ? uploadError.message : "This image could not be used");
     } finally {
       event.target.value = "";
     }
@@ -291,6 +301,7 @@ function CmsLogin({ onUnlock }) {
         throw new Error(result.error || "Wrong password. Try again.");
       }
 
+      window.sessionStorage.setItem(CMS_SESSION_STORAGE_KEY, result.token || "");
       setPassword("");
       onUnlock();
     } catch (loginError) {
@@ -458,6 +469,11 @@ export default function CmsPage() {
   const undoStackRef = useRef([]);
 
   useEffect(() => {
+    const token = window.sessionStorage.getItem(CMS_SESSION_STORAGE_KEY);
+    if (token) {
+      setIsAuthenticated(true);
+    }
+
     const draft = window.localStorage.getItem(CMS_DRAFT_STORAGE_KEY);
     const rawUndoStack = window.sessionStorage.getItem(CMS_UNDO_STORAGE_KEY);
 
@@ -473,19 +489,42 @@ export default function CmsPage() {
       }
     }
 
-    if (!draft) {
-      hasLoadedRef.current = true;
-      return;
+    async function loadSavedContent() {
+      try {
+        const publishedContent = await fetchPublishedContent();
+        if (publishedContent) {
+          setContent(publishedContent);
+          window.localStorage.setItem(CMS_DRAFT_STORAGE_KEY, JSON.stringify(publishedContent));
+          setStatus("Published content loaded");
+          return;
+        }
+
+        if (draft) {
+          setContent(JSON.parse(draft));
+          setStatus("Local draft loaded");
+          return;
+        }
+
+        setStatus("Original content loaded");
+      } catch {
+        if (draft) {
+          try {
+            setContent(JSON.parse(draft));
+            setStatus("Local draft loaded");
+            return;
+          } catch {
+            setStatus("Could not load saved work");
+            return;
+          }
+        }
+
+        setStatus("Original content loaded");
+      } finally {
+        hasLoadedRef.current = true;
+      }
     }
 
-    try {
-      setContent(JSON.parse(draft));
-      setStatus("Saved work loaded");
-    } catch {
-      setStatus("Could not load saved work");
-    } finally {
-      hasLoadedRef.current = true;
-    }
+    loadSavedContent();
   }, []);
 
   const requiredIssues = useMemo(() => {
@@ -515,16 +554,23 @@ export default function CmsPage() {
   }, []);
 
   const update = (path, value) => rememberContentChange((current) => setDeepValue(current, path, value));
-  const writeDraft = useCallback((nextContent, message = "Saved") => {
+  const writeDraft = useCallback(async (nextContent, message = "Saved") => {
     if (requiredIssues.length) {
       setStatus("Fix required fields before saving");
       return false;
     }
 
-    window.localStorage.setItem(CMS_DRAFT_STORAGE_KEY, JSON.stringify(nextContent));
-    setPreviewVersion((current) => current + 1);
-    setStatus(message);
-    return true;
+    try {
+      const token = window.sessionStorage.getItem(CMS_SESSION_STORAGE_KEY);
+      await savePublishedContent(nextContent, token);
+      window.localStorage.setItem(CMS_DRAFT_STORAGE_KEY, JSON.stringify(nextContent));
+      setPreviewVersion((current) => current + 1);
+      setStatus(message);
+      return true;
+    } catch (saveError) {
+      setStatus(saveError instanceof Error ? saveError.message : "Could not save changes");
+      return false;
+    }
   }, [requiredIssues]);
 
   const saveDraft = () => {
@@ -532,12 +578,12 @@ export default function CmsPage() {
   };
 
   const resetDraft = () => {
-    window.localStorage.removeItem(CMS_DRAFT_STORAGE_KEY);
     undoStackRef.current = [cloneSiteContent(content), ...undoStackRef.current].slice(0, 20);
     window.sessionStorage.setItem(CMS_UNDO_STORAGE_KEY, JSON.stringify(undoStackRef.current));
     setUndoDepth(undoStackRef.current.length);
-    setContent(cloneSiteContent(siteContent));
-    setStatus("Back to original content");
+    const originalContent = cloneSiteContent(siteContent);
+    setContent(originalContent);
+    writeDraft(originalContent, "Back to original content");
   };
 
   const undoLastChange = useCallback(() => {
@@ -553,14 +599,14 @@ export default function CmsPage() {
   }, []);
 
   useEffect(() => {
-    if (!hasLoadedRef.current) return;
+    if (!hasLoadedRef.current || !isAuthenticated) return;
 
     const timer = window.setTimeout(() => {
       writeDraft(content, `Saved ${new Date().toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" })}`);
     }, 650);
 
     return () => window.clearTimeout(timer);
-  }, [content, writeDraft]);
+  }, [content, isAuthenticated, writeDraft]);
 
   useEffect(() => {
     updateFavicon(content.header.logo);

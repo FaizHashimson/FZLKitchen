@@ -10,10 +10,10 @@ import {
   X,
 } from "lucide-react";
 import {
-  CMS_DRAFT_STORAGE_KEY,
   assetPath,
   buildWhatsAppUrl,
   cloneSiteContent,
+  fetchPublishedContent,
   siteContent,
   updateFavicon,
 } from "./content/siteContent";
@@ -255,14 +255,26 @@ export default function Home() {
   };
 
   useEffect(() => {
-    try {
-      const draft = window.localStorage.getItem(CMS_DRAFT_STORAGE_KEY);
-      if (draft) {
-        setContent(JSON.parse(draft));
+    let isMounted = true;
+
+    async function loadPublishedContent() {
+      try {
+        const publishedContent = await fetchPublishedContent();
+        if (publishedContent && isMounted) {
+          setContent(publishedContent);
+        }
+      } catch {
+        if (isMounted) {
+          setContent(cloneSiteContent(siteContent));
+        }
       }
-    } catch {
-      setContent(cloneSiteContent(siteContent));
     }
+
+    loadPublishedContent();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {

@@ -1,4 +1,5 @@
 export const CMS_DRAFT_STORAGE_KEY = "fzl-kitchen-cms-draft";
+export const CMS_SESSION_STORAGE_KEY = "fzl-kitchen-cms-session";
 
 export const orderTemplateText = `Hai saya nak order
 
@@ -67,6 +68,56 @@ export function buildWhatsAppUrl(phone, message) {
 
 export function cloneSiteContent(content = siteContent) {
   return JSON.parse(JSON.stringify(content));
+}
+
+export async function fetchPublishedContent() {
+  const response = await fetch("/api/cms/content", {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || !result.ok) {
+    throw new Error(result.error || "Could not load saved website content.");
+  }
+
+  return result.content ? cloneSiteContent(result.content) : null;
+}
+
+export async function savePublishedContent(content, token) {
+  const response = await fetch("/api/cms/content", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token || ""}`,
+    },
+    body: JSON.stringify({ content }),
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || !result.ok) {
+    throw new Error(result.error || "Could not save website content.");
+  }
+
+  return result;
+}
+
+export async function uploadCmsImage(dataUrl, filename, token) {
+  const response = await fetch("/api/cms/assets", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token || ""}`,
+    },
+    body: JSON.stringify({ dataUrl, filename }),
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || !result.ok || !result.url) {
+    throw new Error(result.error || "Could not upload image.");
+  }
+
+  return result.url;
 }
 
 export const siteContent = {

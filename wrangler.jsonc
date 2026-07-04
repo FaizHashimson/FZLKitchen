@@ -1,5 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "fzlkitchen",
-  "pages_build_output_dir": "out"
+  "pages_build_output_dir": "out",
+  "d1_databases": [
+    {
+      "binding": "CMS_DB",
+      "database_name": "fzlkitchen-cms",
+      "database_id": "f1a4960c-6298-47aa-a9a5-fdea2a96991b"
+    }
+  ]
 }
