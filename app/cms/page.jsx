@@ -469,10 +469,20 @@ export default function CmsPage() {
   const undoStackRef = useRef([]);
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem(CMS_SESSION_STORAGE_KEY);
-    if (token) {
-      setIsAuthenticated(true);
-    }
+    window.sessionStorage.removeItem(CMS_SESSION_STORAGE_KEY);
+
+    const lockCms = () => {
+      window.sessionStorage.removeItem(CMS_SESSION_STORAGE_KEY);
+      setIsAuthenticated(false);
+    };
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        lockCms();
+      }
+    };
+
+    window.addEventListener("pagehide", lockCms);
+    window.addEventListener("pageshow", handlePageShow);
 
     const draft = window.localStorage.getItem(CMS_DRAFT_STORAGE_KEY);
     const rawUndoStack = window.sessionStorage.getItem(CMS_UNDO_STORAGE_KEY);
@@ -525,6 +535,11 @@ export default function CmsPage() {
     }
 
     loadSavedContent();
+
+    return () => {
+      window.removeEventListener("pagehide", lockCms);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
   }, []);
 
   const requiredIssues = useMemo(() => {
