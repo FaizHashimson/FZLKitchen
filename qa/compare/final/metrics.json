@@ -1,0 +1,104 @@
+{
+  "desktop": {
+    "height": 8747,
+    "h1": {
+      "text": "Professional video editing that performs",
+      "x": 144,
+      "y": 157.6,
+      "w": 676,
+      "h": 172.8,
+      "fs": "72px",
+      "fw": "500",
+      "lh": "86.4px",
+      "ff": "\"Inter Display\", \"Inter Display Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "header": {
+      "text": "About us Works Services Pricing Contact us",
+      "x": 144,
+      "y": 0,
+      "w": 1152,
+      "h": 81.6,
+      "fs": "16px",
+      "fw": "400",
+      "lh": "normal",
+      "ff": "Inter, \"Inter Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "serviceH3": {
+      "text": "Video editing",
+      "x": 200,
+      "y": 2173,
+      "w": 301.3,
+      "h": 0,
+      "fs": "0px",
+      "fw": "500",
+      "lh": "0px",
+      "ff": "\"Inter Display\", \"Inter Display Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "firstH2": {
+      "text": "At Vidhub, we craft powerful video experiences by transforming raw footage with ",
+      "x": 366,
+      "y": 1330.7,
+      "w": 708,
+      "h": 201.6,
+      "fs": "42px",
+      "fw": "500",
+      "lh": "50.4px",
+      "ff": "\"Inter Display\", \"Inter Display Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    }
+  },
+  "mobile": {
+    "height": 16282,
+    "h1": {
+      "text": "Professional video editing that performs",
+      "x": 16,
+      "y": 153.2,
+      "w": 350,
+      "h": 76.8,
+      "fs": "32px",
+      "fw": "500",
+      "lh": "38.4px",
+      "ff": "\"Inter Display\", \"Inter Display Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "header": {
+      "text": "",
+      "x": 16,
+      "y": 0,
+      "w": 358,
+      "h": 81.6,
+      "fs": "16px",
+      "fw": "400",
+      "lh": "normal",
+      "ff": "Inter, \"Inter Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "serviceH3": {
+      "text": "Video editing",
+      "x": 58,
+      "y": 2388.4,
+      "w": 274,
+      "h": 31.2,
+      "fs": "26px",
+      "fw": "500",
+      "lh": "31.2px",
+      "ff": "\"Inter Display\", \"Inter Display Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    "firstH2": {
+      "text": "At Vidhub, we craft powerful video experiences by transforming raw footage with ",
+      "x": 44,
+      "y": 1322.2,
+      "w": 302,
+      "h": 307.1,
+      "fs": "32px",
+      "fw": "500",
+      "lh": "38.4px",
+      "ff": "\"Inter Display\", \"Inter Display Placeholder\", sans-serif",
+      "bg": "rgba(0, 0, 0, 0)"
+    }
+  }
+}
