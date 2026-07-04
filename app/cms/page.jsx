@@ -218,6 +218,12 @@ function ImageField({ label, value, onChange }) {
     }
   };
 
+  const handleRemove = () => {
+    if (!value) return;
+    onChange("");
+    setUploadStatus("Image removed");
+  };
+
   return (
     <div className="cms-image-field">
       <label className="cms-image-name">
@@ -238,6 +244,16 @@ function ImageField({ label, value, onChange }) {
           Upload image
           <input type="file" accept="image/*" onChange={handleUpload} />
         </label>
+        <button
+          className="cms-mini-button cms-remove-image-button"
+          type="button"
+          onClick={handleRemove}
+          disabled={!value}
+          aria-label={`Remove ${label}`}
+          title={`Remove ${label}`}
+        >
+          <Trash2 size={15} />
+        </button>
         {uploadStatus ? <small className="cms-upload-status">{uploadStatus}</small> : null}
       </div>
     </div>
